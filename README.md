@@ -47,7 +47,7 @@ SQLite-файл живёт на хосте в `./data/smety.db` — пережи
 
 ### Что нужно на сервере
 - Docker и Docker Compose (`docker compose version`)
-- Открытый порт (по умолчанию `80`, переопределяется через `HTTP_PORT`)
+- Свободный порт (по умолчанию `8082`, переопределяется через `HTTP_PORT`)
 
 ### Первый деплой
 
@@ -78,7 +78,7 @@ docker compose up -d --build
 docker compose logs -f
 ```
 
-Открываем `http://<server>/` (или `http://<server>:HTTP_PORT/`).
+Открываем `http://<server>:8082/`.
 
 ### Обновление кода
 
@@ -92,9 +92,9 @@ docker compose up -d --build
 ### Поменять порт
 
 ```bash
-HTTP_PORT=8080 docker compose up -d --build
+HTTP_PORT=8090 docker compose up -d --build
 # или сохранить в .env:
-echo "HTTP_PORT=8080" > .env
+echo "HTTP_PORT=8090" > .env
 ```
 
 ### Бэкап БД

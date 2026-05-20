@@ -1,0 +1,28 @@
+services:
+  backend:
+    build: ./backend
+    container_name: smety-backend
+    restart: unless-stopped
+    environment:
+      SMETY_DB: /data/smety.db
+    volumes:
+      # БД хранится на хосте в ./data — переживает пересборки контейнера
+      - ./data:/data
+    expose:
+      - "8000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request, sys; sys.exit(0 if urllib.request.urlopen('http://localhost:8000/api/health').status == 200 else 1)"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  frontend:
+    build: ./frontend
+    container_name: smety-frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      # Поменяйте 80 на нужный порт хоста (например, 8080:80)
+      - "${HTTP_PORT:-80}:80"

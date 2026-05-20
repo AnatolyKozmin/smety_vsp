@@ -1,0 +1,38 @@
+# ===== Базы данных (никогда в git) =====
+# Локальная БД (рядом с backend)
+backend/smety.db
+backend/smety.db-journal
+backend/*.sqlite
+backend/*.sqlite3
+
+# Продовая БД (volume контейнера, лежит в ./data)
+/data/
+
+# Любые .db / .sqlite где бы то ни было
+*.db
+*.db-journal
+*.sqlite
+*.sqlite3
+
+# ===== Python =====
+backend/.venv/
+backend/__pycache__/
+backend/app/__pycache__/
+**/__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# ===== Node / Vite =====
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+
+# ===== Прочее =====
+.env
+.env.local
+.env.*.local
+.DS_Store
+.vscode/
+.idea/
+*.log

@@ -11,6 +11,7 @@ sys.path.insert(0, os.path.dirname(__file__))
 
 from app.database import Base, engine, SessionLocal
 from app import models
+from app.categorize import categorize
 
 ROOT = os.path.join(os.path.dirname(__file__), "..")
 XLSX_NEW = os.path.join(ROOT, "меню_орги_2026.xlsx")
@@ -73,6 +74,7 @@ def seed_products(db, wb_new):
             grams_in_package=gip,
             price_per_unit=price,
             storage_term=term,
+            category=categorize(name),
         ))
     db.commit()
     print(f"Продукты залиты: {db.query(models.Product).count()}")

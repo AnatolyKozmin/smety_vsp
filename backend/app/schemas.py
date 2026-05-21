@@ -10,6 +10,7 @@ class ProductBase(BaseModel):
     grams_in_package: float = 1000.0
     price_per_unit: float = 0.0
     storage_term: str = "Долгосрочный"
+    category: str = "прочее"
     product_link: str = ""
 
 
@@ -83,6 +84,7 @@ class EventDayOut(EventDayIn):
 class EventMealIn(BaseModel):
     name: str
     sort_order: int = 0
+    portions_override: Optional[int] = None
 
 
 class EventMealOut(EventMealIn):
@@ -169,6 +171,7 @@ class MealCalc(BaseModel):
     name: str
     sort_order: int
     portions: int
+    portions_override: Optional[int] = None
     participant_ids: List[int] = []
     dishes: List[DishCalc] = []
     total_price: float

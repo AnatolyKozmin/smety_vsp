@@ -119,6 +119,23 @@ def update_meal(meal_id: int, payload: schemas.EventMealIn, db: Session = Depend
     return m
 
 
+@router.put("/{event_id}/set-all-portions")
+def set_all_portions(event_id: int, n: int, db: Session = Depends(get_db)):
+    """Проставить portions_override = n на все приёмы пищи всех дней заброса.
+    Передайте n=0, чтобы сбросить (вернуться к расчёту по участникам)."""
+    e = db.get(models.Event, event_id)
+    if not e:
+        raise HTTPException(404, "Заброс не найден")
+    value = None if n <= 0 else int(n)
+    count = 0
+    for d in e.days:
+        for m in d.meals:
+            m.portions_override = value
+            count += 1
+    db.commit()
+    return {"ok": True, "meals_updated": count, "value": value}
+
+
 @router.delete("/meals/{meal_id}")
 def delete_meal(meal_id: int, db: Session = Depends(get_db)):
     m = db.get(models.EventMeal, meal_id)
@@ -395,6 +412,7 @@ def get_event_full(event_id: int, db: Session = Depends(get_db)):
                         "id": m.id,
                         "name": m.name,
                         "sort_order": m.sort_order,
+                        "portions_override": m.portions_override,
                         "participant_ids": [p.person_id for p in m.participants],
                         "dishes": [
                             {
@@ -462,7 +480,8 @@ def get_estimate(event_id: int, db: Session = Depends(get_db)):
         day_total = 0.0
         for m in sorted(d.meals, key=lambda x: x.sort_order):
             participant_ids = [p.person_id for p in m.participants]
-            portions = len(participant_ids)
+            # Если задан portions_override — используем его как кол-во порций, иначе count участников
+            portions = m.portions_override if m.portions_override and m.portions_override > 0 else len(participant_ids)
             for pid in participant_ids:
                 person_meals[pid] = person_meals.get(pid, 0) + 1
             dishes_out = []
@@ -500,7 +519,8 @@ def get_estimate(event_id: int, db: Session = Depends(get_db)):
             day_total += meal_total
             meals_out.append(schemas.MealCalc(
                 id=m.id, name=m.name, sort_order=m.sort_order,
-                portions=portions, participant_ids=participant_ids,
+                portions=portions, portions_override=m.portions_override,
+                participant_ids=participant_ids,
                 dishes=dishes_out, total_price=meal_total,
             ))
         food_total += day_total
@@ -624,7 +644,7 @@ def get_shopping_list(event_id: int, db: Session = Depends(get_db)):
 
     for d in e.days:
         for m in d.meals:
-            portions = len(m.participants)
+            portions = m.portions_override if m.portions_override and m.portions_override > 0 else len(m.participants)
             if portions <= 0:
                 continue
             for dish in m.dishes:

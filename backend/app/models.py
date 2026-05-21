@@ -13,6 +13,7 @@ class Product(Base):
     grams_in_package = Column(Float, default=1000.0) # 0 если не применимо (специи, кофе...)
     price_per_unit = Column(Float, default=0.0)      # ₽ за упаковку
     storage_term = Column(String, default="Долгосрочный")  # «Краткосрочный» / «Долгосрочный»
+    category = Column(String, default="прочее")            # «овощи-фрукты», «мясо», «молочка», «крупы», «приправы», «прочее»
     product_link = Column(String, default="")
 
 
@@ -104,6 +105,9 @@ class EventMeal(Base):
     day_id = Column(Integer, ForeignKey("event_days.id", ondelete="CASCADE"), nullable=False)
     name = Column(String, nullable=False)
     sort_order = Column(Integer, default=0)
+    # Если задано — берём это число вместо count(participants). Удобно для забросов с большим числом
+    # людей, где имена не нужны (например, общий заезд участников).
+    portions_override = Column(Integer, nullable=True)
 
     day = relationship("EventDay", back_populates="meals")
     dishes = relationship(

@@ -9,6 +9,10 @@
         <option>Краткосрочный</option>
         <option>Долгосрочный</option>
       </select>
+      <select v-model="categoryFilter">
+        <option value="">Категория: все</option>
+        <option v-for="c in CATEGORIES" :key="c">{{ categoryIcon(c) }} {{ c }}</option>
+      </select>
       <span class="muted">{{ filtered.length }} / {{ products.length }}</span>
     </div>
     <button @click="startNew">+ Новый продукт</button>
@@ -16,40 +20,43 @@
 
   <div v-if="error" class="error">{{ error }}</div>
 
-  <div class="card" style="padding:0">
-    <table>
-      <thead>
-        <tr>
-          <th>Продукт</th>
-          <th>Ед. изм.</th>
-          <th class="right">Г в упаковке</th>
-          <th class="right">₽ за упаковку</th>
-          <th>Срок</th>
-          <th></th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr v-for="p in filtered" :key="p.id">
-          <td><b>{{ p.name }}</b></td>
-          <td>{{ p.unit }}</td>
-          <td class="right">{{ p.grams_in_package || '—' }}</td>
-          <td class="right">{{ p.price_per_unit ? p.price_per_unit + ' ₽' : '—' }}</td>
-          <td>
-            <span class="tag" :class="termClass(p.storage_term)">{{ p.storage_term }}</span>
-          </td>
-          <td class="right nowrap">
-            <button class="secondary small" @click="startEdit(p)">Изменить</button>
-            <button class="danger small" @click="remove(p)" style="margin-left:6px">×</button>
-          </td>
-        </tr>
-        <tr v-if="!filtered.length">
-          <td colspan="6" class="empty">
-            <div class="big">🌾</div>
-            Ничего не нашлось
-          </td>
-        </tr>
-      </tbody>
-    </table>
+  <!-- Группировка по категориям -->
+  <div v-for="cat in visibleCategories" :key="cat" class="cat-block">
+    <h3>{{ categoryIcon(cat) }} {{ cat }} <span class="muted">({{ groupedFiltered[cat].length }})</span></h3>
+    <div class="card" style="padding:0">
+      <table>
+        <thead>
+          <tr>
+            <th>Продукт</th>
+            <th>Ед. изм.</th>
+            <th class="right">Г в упаковке</th>
+            <th class="right">₽ за упаковку</th>
+            <th>Срок</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="p in groupedFiltered[cat]" :key="p.id">
+            <td><b>{{ p.name }}</b></td>
+            <td>{{ p.unit }}</td>
+            <td class="right">{{ p.grams_in_package || '—' }}</td>
+            <td class="right">{{ p.price_per_unit ? p.price_per_unit + ' ₽' : '—' }}</td>
+            <td>
+              <span class="tag" :class="termClass(p.storage_term)">{{ p.storage_term }}</span>
+            </td>
+            <td class="right nowrap">
+              <button class="secondary small" @click="startEdit(p)">Изменить</button>
+              <button class="danger small" @click="remove(p)" style="margin-left:6px">×</button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div v-if="!visibleCategories.length" class="empty">
+    <div class="big">🌾</div>
+    Ничего не нашлось
   </div>
 
   <div v-if="editing" class="modal-backdrop" @click.self="editing = null">
@@ -58,6 +65,10 @@
       <div class="kv">
         <label>Название:</label>
         <input v-model="editing.name" autofocus />
+        <label>Категория:</label>
+        <select v-model="editing.category">
+          <option v-for="c in CATEGORIES" :key="c" :value="c">{{ categoryIcon(c) }} {{ c }}</option>
+        </select>
         <label>Единица:</label>
         <input v-model="editing.unit" placeholder="кг, пачка, банка, г…" class="w-md" />
         <label>Грамм в упаковке:</label>
@@ -85,12 +96,26 @@
 import { ref, computed, onMounted } from 'vue'
 import { api } from '../api.js'
 
+const CATEGORIES = ['овощи-фрукты', 'мясо', 'молочка', 'крупы', 'приправы', 'прочее']
+
+function categoryIcon(c) {
+  return ({
+    'овощи-фрукты': '🥕',
+    'мясо': '🥩',
+    'молочка': '🥛',
+    'крупы': '🌾',
+    'приправы': '🧂',
+    'прочее': '📦',
+  })[c] || '📦'
+}
+
 const products = ref([])
 const error = ref('')
 const editing = ref(null)
 const modalError = ref('')
 const filter = ref('')
 const termFilter = ref('')
+const categoryFilter = ref('')
 
 function termClass(t) {
   if (!t) return ''
@@ -103,9 +128,25 @@ const filtered = computed(() => {
   return products.value.filter(p => {
     if (q && !p.name.toLowerCase().includes(q)) return false
     if (termFilter.value && p.storage_term !== termFilter.value) return false
+    if (categoryFilter.value && p.category !== categoryFilter.value) return false
     return true
   })
 })
+
+const groupedFiltered = computed(() => {
+  const g = {}
+  for (const c of CATEGORIES) g[c] = []
+  for (const p of filtered.value) {
+    const c = CATEGORIES.includes(p.category) ? p.category : 'прочее'
+    g[c].push(p)
+  }
+  for (const c of CATEGORIES) g[c].sort((a, b) => a.name.localeCompare(b.name, 'ru'))
+  return g
+})
+
+const visibleCategories = computed(() =>
+  CATEGORIES.filter(c => groupedFiltered.value[c].length > 0)
+)
 
 async function load() {
   try { products.value = await api.listProducts() } catch (e) { error.value = e.message }
@@ -114,13 +155,14 @@ async function load() {
 function startNew() {
   editing.value = {
     id: null, name: '', unit: 'кг', grams_in_package: 1000,
-    price_per_unit: 0, storage_term: 'Долгосрочный', product_link: '',
+    price_per_unit: 0, storage_term: 'Долгосрочный',
+    category: 'прочее', product_link: '',
   }
   modalError.value = ''
 }
 
 function startEdit(p) {
-  editing.value = { ...p }
+  editing.value = { ...p, category: p.category || 'прочее' }
   modalError.value = ''
 }
 
@@ -132,6 +174,7 @@ async function save() {
     grams_in_package: Number(editing.value.grams_in_package) || 0,
     price_per_unit: Number(editing.value.price_per_unit) || 0,
     storage_term: editing.value.storage_term || 'Долгосрочный',
+    category: editing.value.category || 'прочее',
     product_link: editing.value.product_link || '',
   }
   try {
@@ -150,3 +193,8 @@ async function remove(p) {
 
 onMounted(load)
 </script>
+
+<style scoped>
+.cat-block { margin-bottom: 20px; }
+.cat-block h3 { margin: 16px 0 8px; }
+</style>

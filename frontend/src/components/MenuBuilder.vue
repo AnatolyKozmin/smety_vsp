@@ -38,9 +38,22 @@
               class="meal-name-input"
               @change="updateMeal(meal)"
             />
-            <button class="chip" @click="openParticipants(meal)" :title="'Выбрать участников'">
+            <button class="chip" @click="openParticipants(meal)" title="Выбрать участников по списку">
               👥 {{ meal.participant_ids.length }} чел.
             </button>
+            <span class="portions-control" title="Ручное число порций. Если задано — используется вместо списка">
+              <span class="muted small">или вручную:</span>
+              <input
+                type="number"
+                min="0"
+                :value="meal.portions_override || ''"
+                placeholder="—"
+                class="w-xs"
+                @change="updateMealPortions(meal, $event.target.value)"
+              />
+              <span class="muted small">чел.</span>
+            </span>
+            <span v-if="effectivePortions(meal) > 0" class="tag green">→ {{ effectivePortions(meal) }} порций</span>
           </div>
           <div class="row">
             <button class="ghost small" :disabled="mealIdx === 0" @click="moveMeal(day, mealIdx, -1)">↑</button>
@@ -285,8 +298,26 @@ async function addPresetMeal(day, name) {
 }
 
 async function updateMeal(m) {
-  await api.updateMeal(m.id, { name: m.name, sort_order: m.sort_order })
+  await api.updateMeal(m.id, {
+    name: m.name, sort_order: m.sort_order,
+    portions_override: m.portions_override || null,
+  })
   emit('changed')
+}
+
+async function updateMealPortions(m, raw) {
+  const n = parseInt(raw, 10)
+  m.portions_override = isNaN(n) || n <= 0 ? null : n
+  await api.updateMeal(m.id, {
+    name: m.name, sort_order: m.sort_order,
+    portions_override: m.portions_override,
+  })
+  emit('changed')
+}
+
+function effectivePortions(m) {
+  if (m.portions_override && m.portions_override > 0) return m.portions_override
+  return m.participant_ids.length
 }
 
 async function deleteMeal(m) {
@@ -584,4 +615,16 @@ button.ghost.danger-text { color: var(--berry); }
 button.ghost.danger-text:hover { background: #fde2e2; }
 
 button.ghost:disabled { opacity: 0.3; }
+
+.portions-control {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: #fff;
+  border: 1px dashed var(--border);
+  padding: 2px 8px;
+  border-radius: 999px;
+}
+.portions-control input { padding: 2px 6px; font-size: 13px; }
+.portions-control .small { font-size: 11px; }
 </style>

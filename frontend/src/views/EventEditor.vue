@@ -20,6 +20,7 @@
 
     <div class="tabs">
       <button :class="['tab', { active: tab === 'menu' }]" @click="tab = 'menu'">🍲 Меню</button>
+      <button :class="['tab', { active: tab === 'guests' }]" @click="tab = 'guests'">🎟 Гости</button>
       <button :class="['tab', { active: tab === 'misc' }]" @click="tab = 'misc'">🧂 Прочее <span class="tab-count">{{ miscItems.length }}</span></button>
       <button :class="['tab', { active: tab === 'settings' }]" @click="tab = 'settings'">⚙️ Настройки</button>
     </div>
@@ -27,6 +28,11 @@
     <!-- ===== MENU TAB ===== -->
     <div v-show="tab === 'menu'">
       <MenuBuilder :event-id="eventId" />
+    </div>
+
+    <!-- ===== GUESTS TAB ===== -->
+    <div v-show="tab === 'guests'">
+      <GuestsTab :event-id="eventId" />
     </div>
 
     <!-- ===== MISC TAB ===== -->
@@ -117,18 +123,6 @@
         </div>
       </div>
 
-      <div class="card">
-        <h3 style="margin-top:0">Массовое количество людей</h3>
-        <div class="hint-block">
-          Удобно для забросов с большим числом людей, где имена не нужны — например, общий заезд участников.
-          Поставит число во все приёмы пищи всех дней (можно потом перебить в конкретном приёме). 0 = сбросить.
-        </div>
-        <div class="row">
-          <input type="number" v-model.number="bulkPortions" placeholder="50" class="w-sm" min="0" />
-          <button @click="applyBulkPortions">Задать всем</button>
-        </div>
-      </div>
-
       <div class="card" style="border-color: #f0a8a8">
         <h3 style="margin-top:0; color: var(--berry)">Опасная зона</h3>
         <p class="muted">Удалит весь заброс со всеми днями, приёмами пищи, прочим и платежами.</p>
@@ -146,6 +140,7 @@ import { api } from '../api.js'
 import ParticipantPicker from '../components/ParticipantPicker.vue'
 import MenuBuilder from '../components/MenuBuilder.vue'
 import ProductPicker from '../components/ProductPicker.vue'
+import GuestsTab from '../components/GuestsTab.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -163,7 +158,6 @@ const tab = ref('menu')
 
 const miscParticipantsOpen = ref(false)
 const miscTempIds = ref([])
-const bulkPortions = ref(0)
 
 const statsLine = computed(() => {
   if (!event.value) return ''
@@ -209,14 +203,6 @@ async function load() {
 
 async function saveEvent() {
   await api.updateEvent(eventId, { name: event.value.name, markup_percent: event.value.markup_percent })
-}
-
-async function applyBulkPortions() {
-  const n = Number(bulkPortions.value) || 0
-  if (n > 0 && !confirm(`Поставить ${n} чел. на ВСЕ приёмы пищи всех дней? Текущие значения перезапишутся.`)) return
-  if (n <= 0 && !confirm('Сбросить кол-во людей у всех приёмов (вернуться к расчёту по списку участников)?')) return
-  await api.setAllPortions(eventId, n)
-  alert(n > 0 ? `Поставлено ${n} чел. на все приёмы пищи.` : 'Сброшено.')
 }
 
 async function deleteEvent() {

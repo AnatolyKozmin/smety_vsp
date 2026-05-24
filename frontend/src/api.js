@@ -53,7 +53,7 @@ export const api = {
   setMealParticipants: (mealId, ids) => request(`/events/meals/${mealId}/participants`, {
     method: 'PUT', body: JSON.stringify(ids),
   }),
-  setAllPortions: (eventId, n) => request(`/events/${eventId}/set-all-portions?n=${n}`, {
+  setAllGuests: (eventId, n) => request(`/events/${eventId}/set-all-guests?n=${n}`, {
     method: 'PUT',
   }),
 

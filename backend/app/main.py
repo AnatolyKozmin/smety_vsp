@@ -37,20 +37,24 @@ def _ensure_category_column():
         db.close()
 
 
-def _ensure_portions_override_column():
-    """Если колонки event_meals.portions_override ещё нет — добавить."""
+def _ensure_guests_count_column():
+    """Колонка event_meals.guests_count: либо переименовать старую portions_override, либо добавить."""
     insp = inspect(engine)
     if "event_meals" not in insp.get_table_names():
         return
     cols = {c["name"] for c in insp.get_columns("event_meals")}
-    if "portions_override" not in cols:
-        with engine.begin() as conn:
-            conn.execute(text("ALTER TABLE event_meals ADD COLUMN portions_override INTEGER"))
+    with engine.begin() as conn:
+        if "guests_count" not in cols:
+            if "portions_override" in cols:
+                # SQLite 3.25+ умеет RENAME COLUMN; семантика теперь другая, но число сохраняем
+                conn.execute(text("ALTER TABLE event_meals RENAME COLUMN portions_override TO guests_count"))
+            else:
+                conn.execute(text("ALTER TABLE event_meals ADD COLUMN guests_count INTEGER DEFAULT 0"))
 
 
 Base.metadata.create_all(bind=engine)
 _ensure_category_column()
-_ensure_portions_override_column()
+_ensure_guests_count_column()
 
 app = FastAPI(title="Сметы забросов")
 

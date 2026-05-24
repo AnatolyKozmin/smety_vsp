@@ -84,7 +84,7 @@ class EventDayOut(EventDayIn):
 class EventMealIn(BaseModel):
     name: str
     sort_order: int = 0
-    portions_override: Optional[int] = None
+    guests_count: int = 0
 
 
 class EventMealOut(EventMealIn):
@@ -170,8 +170,8 @@ class MealCalc(BaseModel):
     id: int
     name: str
     sort_order: int
-    portions: int
-    portions_override: Optional[int] = None
+    portions: int                       # = len(participant_ids) + guests_count
+    guests_count: int = 0
     participant_ids: List[int] = []
     dishes: List[DishCalc] = []
     total_price: float

@@ -105,9 +105,8 @@ class EventMeal(Base):
     day_id = Column(Integer, ForeignKey("event_days.id", ondelete="CASCADE"), nullable=False)
     name = Column(String, nullable=False)
     sort_order = Column(Integer, default=0)
-    # Если задано — берём это число вместо count(participants). Удобно для забросов с большим числом
-    # людей, где имена не нужны (например, общий заезд участников).
-    portions_override = Column(Integer, nullable=True)
+    # Дополнительные едоки без поимённого учёта (гости). Прибавляется к count(participants).
+    guests_count = Column(Integer, default=0)
 
     day = relationship("EventDay", back_populates="meals")
     dishes = relationship(

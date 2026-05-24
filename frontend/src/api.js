@@ -91,4 +91,20 @@ export const api = {
   updatePayment: (eventId, personId, amount) => request(`/events/${eventId}/payments`, {
     method: 'PUT', body: JSON.stringify({ person_id: personId, paid_amount: amount }),
   }),
+
+  // participant items
+  getParticipantItems: (eventId) => request(`/events/${eventId}/participant-items`),
+  addParticipantProduct: (eventId, personId, data) => request(
+    `/events/${eventId}/participants/${personId}/products`,
+    { method: 'POST', body: JSON.stringify(data) },
+  ),
+  updateParticipantProduct: (itemId, data) => request(`/events/participant-products/${itemId}`, {
+    method: 'PUT', body: JSON.stringify(data),
+  }),
+  deleteParticipantProduct: (itemId) => request(`/events/participant-products/${itemId}`, { method: 'DELETE' }),
+  addParticipantDish: (eventId, personId, data) => request(
+    `/events/${eventId}/participants/${personId}/dishes`,
+    { method: 'POST', body: JSON.stringify(data) },
+  ),
+  deleteParticipantDish: (itemId) => request(`/events/participant-dishes/${itemId}`, { method: 'DELETE' }),
 }

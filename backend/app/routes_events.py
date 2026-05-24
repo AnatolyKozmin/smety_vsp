@@ -700,3 +700,113 @@ def get_shopping_list(event_id: int, db: Session = Depends(get_db)):
         long_total=round(long_total, 2),
         grand_total=round(short_total + long_total, 2),
     )
+
+
+# ===== Participant items =====
+
+@router.get("/{event_id}/participant-items")
+def get_participant_items(event_id: int, db: Session = Depends(get_db)):
+    products = (
+        db.query(models.EventParticipantProduct)
+        .options(selectinload(models.EventParticipantProduct.product))
+        .filter(models.EventParticipantProduct.event_id == event_id)
+        .all()
+    )
+    dishes = (
+        db.query(models.EventParticipantDish)
+        .filter(models.EventParticipantDish.event_id == event_id)
+        .all()
+    )
+    return {
+        "products": [
+            {
+                "id": p.id,
+                "event_id": p.event_id,
+                "person_id": p.person_id,
+                "product_id": p.product_id,
+                "quantity": p.quantity,
+                "size": p.size,
+                "product": _product_dict(p.product),
+            }
+            for p in products
+        ],
+        "dishes": [
+            {"id": d.id, "event_id": d.event_id, "person_id": d.person_id, "name": d.name}
+            for d in dishes
+        ],
+    }
+
+
+@router.post("/{event_id}/participants/{person_id}/products")
+def add_participant_product(
+    event_id: int,
+    person_id: int,
+    payload: schemas.ParticipantProductIn,
+    db: Session = Depends(get_db),
+):
+    item = models.EventParticipantProduct(
+        event_id=event_id, person_id=person_id, **payload.model_dump()
+    )
+    db.add(item)
+    db.commit()
+    db.refresh(item)
+    return {
+        "id": item.id,
+        "event_id": item.event_id,
+        "person_id": item.person_id,
+        "product_id": item.product_id,
+        "quantity": item.quantity,
+        "size": item.size,
+        "product": _product_dict(item.product),
+    }
+
+
+@router.put("/participant-products/{item_id}")
+def update_participant_product(
+    item_id: int,
+    payload: schemas.ParticipantProductIn,
+    db: Session = Depends(get_db),
+):
+    item = db.get(models.EventParticipantProduct, item_id)
+    if not item:
+        raise HTTPException(404, "Не найдено")
+    for k, v in payload.model_dump().items():
+        setattr(item, k, v)
+    db.commit()
+    return {"ok": True}
+
+
+@router.delete("/participant-products/{item_id}")
+def delete_participant_product(item_id: int, db: Session = Depends(get_db)):
+    item = db.get(models.EventParticipantProduct, item_id)
+    if not item:
+        raise HTTPException(404, "Не найдено")
+    db.delete(item)
+    db.commit()
+    return {"ok": True}
+
+
+@router.post("/{event_id}/participants/{person_id}/dishes")
+def add_participant_dish(
+    event_id: int,
+    person_id: int,
+    payload: schemas.ParticipantDishIn,
+    db: Session = Depends(get_db),
+):
+    item = models.EventParticipantDish(
+        event_id=event_id, person_id=person_id, **payload.model_dump()
+    )
+    db.add(item)
+    db.commit()
+    db.refresh(item)
+    return {"id": item.id, "event_id": item.event_id, "person_id": item.person_id, "name": item.name}
+
+
+@router.delete("/participant-dishes/{item_id}")
+def delete_participant_dish(item_id: int, db: Session = Depends(get_db)):
+    item = db.get(models.EventParticipantDish, item_id)
+    if not item:
+        raise HTTPException(404, "Не найдено")
+    db.delete(item)
+    db.commit()
+    return {"ok": True}

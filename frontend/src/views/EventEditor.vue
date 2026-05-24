@@ -22,6 +22,7 @@
       <button :class="['tab', { active: tab === 'menu' }]" @click="tab = 'menu'">🍲 Меню</button>
       <button :class="['tab', { active: tab === 'guests' }]" @click="tab = 'guests'">🎟 Гости</button>
       <button :class="['tab', { active: tab === 'misc' }]" @click="tab = 'misc'">🧂 Прочее <span class="tab-count">{{ miscItems.length }}</span></button>
+      <button :class="['tab', { active: tab === 'participants' }]" @click="tab = 'participants'">👤 Участники</button>
       <button :class="['tab', { active: tab === 'settings' }]" @click="tab = 'settings'">⚙️ Настройки</button>
     </div>
 
@@ -108,6 +109,11 @@
       </div>
     </div>
 
+    <!-- ===== PARTICIPANTS TAB ===== -->
+    <div v-show="tab === 'participants'">
+      <ParticipantsTab :event-id="eventId" />
+    </div>
+
     <!-- ===== SETTINGS TAB ===== -->
     <div v-show="tab === 'settings'">
       <div class="card">
@@ -141,6 +147,7 @@ import ParticipantPicker from '../components/ParticipantPicker.vue'
 import MenuBuilder from '../components/MenuBuilder.vue'
 import ProductPicker from '../components/ProductPicker.vue'
 import GuestsTab from '../components/GuestsTab.vue'
+import ParticipantsTab from '../components/ParticipantsTab.vue'
 
 const route = useRoute()
 const router = useRouter()

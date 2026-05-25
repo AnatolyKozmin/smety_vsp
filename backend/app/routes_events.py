@@ -702,6 +702,108 @@ def get_shopping_list(event_id: int, db: Session = Depends(get_db)):
     )
 
 
+# ===== Guest items =====
+
+@router.get("/{event_id}/guest-items")
+def get_guest_items(event_id: int, db: Session = Depends(get_db)):
+    products = (
+        db.query(models.EventGuestProduct)
+        .options(selectinload(models.EventGuestProduct.product))
+        .filter(models.EventGuestProduct.event_id == event_id)
+        .all()
+    )
+    dishes = (
+        db.query(models.EventGuestDish)
+        .filter(models.EventGuestDish.event_id == event_id)
+        .all()
+    )
+    return {
+        "products": [
+            {
+                "id": p.id,
+                "event_id": p.event_id,
+                "product_id": p.product_id,
+                "quantity": p.quantity,
+                "size": p.size,
+                "product": _product_dict(p.product),
+            }
+            for p in products
+        ],
+        "dishes": [
+            {"id": d.id, "event_id": d.event_id, "name": d.name}
+            for d in dishes
+        ],
+    }
+
+
+@router.post("/{event_id}/guest-products")
+def add_guest_product(
+    event_id: int,
+    payload: schemas.GuestProductIn,
+    db: Session = Depends(get_db),
+):
+    item = models.EventGuestProduct(event_id=event_id, **payload.model_dump())
+    db.add(item)
+    db.commit()
+    db.refresh(item)
+    return {
+        "id": item.id,
+        "event_id": item.event_id,
+        "product_id": item.product_id,
+        "quantity": item.quantity,
+        "size": item.size,
+        "product": _product_dict(item.product),
+    }
+
+
+@router.put("/guest-products/{item_id}")
+def update_guest_product(
+    item_id: int,
+    payload: schemas.GuestProductIn,
+    db: Session = Depends(get_db),
+):
+    item = db.get(models.EventGuestProduct, item_id)
+    if not item:
+        raise HTTPException(404, "Не найдено")
+    for k, v in payload.model_dump().items():
+        setattr(item, k, v)
+    db.commit()
+    return {"ok": True}
+
+
+@router.delete("/guest-products/{item_id}")
+def delete_guest_product(item_id: int, db: Session = Depends(get_db)):
+    item = db.get(models.EventGuestProduct, item_id)
+    if not item:
+        raise HTTPException(404, "Не найдено")
+    db.delete(item)
+    db.commit()
+    return {"ok": True}
+
+
+@router.post("/{event_id}/guest-dishes")
+def add_guest_dish(
+    event_id: int,
+    payload: schemas.GuestDishIn,
+    db: Session = Depends(get_db),
+):
+    item = models.EventGuestDish(event_id=event_id, **payload.model_dump())
+    db.add(item)
+    db.commit()
+    db.refresh(item)
+    return {"id": item.id, "event_id": item.event_id, "name": item.name}
+
+
+@router.delete("/guest-dishes/{item_id}")
+def delete_guest_dish(item_id: int, db: Session = Depends(get_db)):
+    item = db.get(models.EventGuestDish, item_id)
+    if not item:
+        raise HTTPException(404, "Не найдено")
+    db.delete(item)
+    db.commit()
+    return {"ok": True}
+
+
 # ===== Participant items =====
 
 @router.get("/{event_id}/participant-items")

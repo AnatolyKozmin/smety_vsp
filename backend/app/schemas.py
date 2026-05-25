@@ -253,6 +253,35 @@ class PaymentUpdate(BaseModel):
     paid_amount: float
 
 
+# ===== Guest items =====
+
+class GuestProductIn(BaseModel):
+    product_id: int
+    quantity: float = 1.0
+    size: str = "среднее"  # малое / среднее / большое
+
+
+class GuestProductOut(BaseModel):
+    id: int
+    event_id: int
+    product_id: int
+    quantity: float
+    size: str
+    product: ProductOut
+    model_config = ConfigDict(from_attributes=True)
+
+
+class GuestDishIn(BaseModel):
+    name: str
+
+
+class GuestDishOut(BaseModel):
+    id: int
+    event_id: int
+    name: str
+    model_config = ConfigDict(from_attributes=True)
+
+
 # ===== Participant items =====
 
 class ParticipantProductIn(BaseModel):

@@ -657,6 +657,30 @@ def get_shopping_list(event_id: int, db: Session = Depends(get_db)):
         products[prod.id] = prod
         units_by_product[prod.id] = units_by_product.get(prod.id, 0.0) + (i.quantity or 0)
 
+    # Личные продукты участников
+    participant_prods = (
+        db.query(models.EventParticipantProduct)
+        .options(selectinload(models.EventParticipantProduct.product))
+        .filter(models.EventParticipantProduct.event_id == event_id)
+        .all()
+    )
+    for i in participant_prods:
+        prod = i.product
+        products[prod.id] = prod
+        units_by_product[prod.id] = units_by_product.get(prod.id, 0.0) + (i.quantity or 0)
+
+    # Общие продукты гостей
+    guest_prods = (
+        db.query(models.EventGuestProduct)
+        .options(selectinload(models.EventGuestProduct.product))
+        .filter(models.EventGuestProduct.event_id == event_id)
+        .all()
+    )
+    for i in guest_prods:
+        prod = i.product
+        products[prod.id] = prod
+        units_by_product[prod.id] = units_by_product.get(prod.id, 0.0) + (i.quantity or 0)
+
     rows_short: list = []
     rows_long: list = []
     short_total = 0.0

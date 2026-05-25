@@ -14,6 +14,7 @@
       <router-link to="/dishes"><span class="icon">📖</span> База блюд</router-link>
       <router-link to="/products"><span class="icon">🥕</span> Продукты</router-link>
       <router-link to="/people"><span class="icon">🧑‍🤝‍🧑</span> Участники</router-link>
+      <router-link to="/guests"><span class="icon">🎟</span> Гости</router-link>
       <div class="footer-note">🍃 v0.2 · 2026</div>
     </aside>
     <main class="main">

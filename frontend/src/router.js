@@ -9,6 +9,7 @@ import PeopleView from './views/PeopleView.vue'
 import ProductsView from './views/ProductsView.vue'
 import ShoppingListView from './views/ShoppingListView.vue'
 import ShoppingHubView from './views/ShoppingHubView.vue'
+import GuestsHubView from './views/GuestsHubView.vue'
 
 export const router = createRouter({
   history: createWebHashHistory(),
@@ -26,5 +27,7 @@ export const router = createRouter({
     { path: '/menu/:id', component: MenuView, props: true },
     { path: '/dishes', component: DishesView },
     { path: '/people', component: PeopleView },
+    { path: '/guests', component: GuestsHubView },
+    { path: '/guests/:id', component: GuestsHubView, props: true },
   ],
 })

@@ -6,8 +6,11 @@ async function request(path, opts = {}) {
     ...opts,
   })
   if (!res.ok) {
-    let detail
-    try { detail = (await res.json()).detail } catch { detail = await res.text() }
+    let detail = ''
+    try {
+      const text = await res.text()
+      try { detail = JSON.parse(text).detail || text } catch { detail = text }
+    } catch { /* ignore */ }
     throw new Error(detail || `HTTP ${res.status}`)
   }
   if (res.status === 204) return null

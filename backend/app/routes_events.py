@@ -443,6 +443,9 @@ def get_event_full(event_id: int, db: Session = Depends(get_db)):
 
 
 def _product_dict(p):
+    if p is None:
+        return {"id": 0, "name": "⚠️ удалённый продукт", "unit": "", "grams_in_package": 0.0,
+                "price_per_unit": 0.0, "storage_term": "", "product_link": ""}
     return {
         "id": p.id,
         "name": p.name,

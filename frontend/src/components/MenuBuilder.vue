@@ -38,11 +38,18 @@
               class="meal-name-input"
               @change="updateMeal(meal)"
             />
-            <button class="chip" @click="openParticipants(meal)" title="Выбрать участников-оргов">
+            <button class="chip" @click="openParticipants(meal)" title="Выбрать участников по имени">
               👥 {{ meal.participant_ids.length }}
             </button>
-            <span v-if="(meal.guests_count || 0) > 0" class="chip" title="Гости — задаются на вкладке «Гости»">
-              🎟 {{ meal.guests_count }}
+            <span class="guests-inline" title="Дополнительные едоки без имени">
+              +<input
+                type="number"
+                :value="meal.guests_count || 0"
+                min="0"
+                class="guests-num-input"
+                @change="updateGuestsCount(meal, $event.target.value)"
+                @click.stop
+              />
             </span>
             <span v-if="effectivePortions(meal) > 0" class="tag green">= {{ effectivePortions(meal) }} порций</span>
           </div>
@@ -298,6 +305,13 @@ async function updateMeal(m) {
 
 function effectivePortions(m) {
   return m.participant_ids.length + (m.guests_count || 0)
+}
+
+async function updateGuestsCount(m, raw) {
+  const n = Math.max(0, parseInt(raw, 10) || 0)
+  m.guests_count = n
+  await api.updateMeal(m.id, { name: m.name, sort_order: m.sort_order, guests_count: n })
+  emit('changed')
 }
 
 async function deleteMeal(m) {
@@ -595,4 +609,29 @@ button.ghost.danger-text { color: var(--berry); }
 button.ghost.danger-text:hover { background: #fde2e2; }
 
 button.ghost:disabled { opacity: 0.3; }
+
+.guests-inline {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 4px 10px 4px 8px;
+  font-size: 12px;
+  color: var(--muted);
+}
+.guests-num-input {
+  width: 36px;
+  border: none;
+  background: transparent;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--green-800);
+  padding: 0;
+  text-align: center;
+  box-shadow: none;
+  border-radius: 0;
+}
+.guests-num-input:focus { outline: none; box-shadow: none; }
 </style>

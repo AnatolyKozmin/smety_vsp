@@ -144,6 +144,7 @@ class EventDishIngredient(Base):
     product_id = Column(Integer, ForeignKey("products.id", ondelete="RESTRICT"), nullable=False)
     grams_per_portion = Column(Float, default=0.0)
     taken = Column(Boolean, default=False)
+    is_fixed = Column(Boolean, default=False)  # True → фикс. кол-во, не зависит от порций
 
     dish = relationship("EventDish", back_populates="ingredients")
     product = relationship("Product")

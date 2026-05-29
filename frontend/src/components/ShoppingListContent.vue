@@ -134,6 +134,7 @@
                 />
                 <span class="ing-name" :class="{ 'line-through': ing.taken }">
                   {{ ing.product.name }}
+                  <span v-if="ing.is_fixed" class="fixed-badge">фикс</span>
                 </span>
                 <span class="ing-detail muted">
                   {{ fmtGrams(totalGrams(ing, meal)) }}
@@ -214,7 +215,8 @@ function portions(meal) {
 }
 
 function totalGrams(ing, meal) {
-  return Math.round((ing.grams_per_portion || 0) * portions(meal))
+  const g = ing.grams_per_portion || 0
+  return Math.round(ing.is_fixed ? g : g * portions(meal))
 }
 
 function pkgs(ing, meal) {
@@ -391,6 +393,19 @@ defineExpose({ reload: load })
 .ing-name { flex: 1; font-size: 14px; }
 .ing-detail { font-size: 12px; text-align: right; white-space: nowrap; }
 .line-through { text-decoration: line-through; }
+.fixed-badge {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 700;
+  background: #fff3e0;
+  color: #e65100;
+  border-radius: 4px;
+  padding: 1px 5px;
+  margin-left: 4px;
+  vertical-align: middle;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
 
 .center-pad { padding: 32px; text-align: center; }
 

@@ -97,6 +97,7 @@ class EventDishIngredientIn(BaseModel):
     product_id: int
     grams_per_portion: float = 0.0
     taken: bool = False
+    is_fixed: bool = False
 
 
 class EventDishIngredientOut(EventDishIngredientIn):

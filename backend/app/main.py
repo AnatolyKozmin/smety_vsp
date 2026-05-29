@@ -52,6 +52,16 @@ def _ensure_guests_count_column():
                 conn.execute(text("ALTER TABLE event_meals ADD COLUMN guests_count INTEGER DEFAULT 0"))
 
 
+def _ensure_is_fixed_column():
+    insp = inspect(engine)
+    if "event_dish_ingredients" not in insp.get_table_names():
+        return
+    cols = {c["name"] for c in insp.get_columns("event_dish_ingredients")}
+    if "is_fixed" not in cols:
+        with engine.begin() as conn:
+            conn.execute(text("ALTER TABLE event_dish_ingredients ADD COLUMN is_fixed INTEGER DEFAULT 0"))
+
+
 def _backfill_event_participants():
     """Для существующих забросов заполняет event_participants из meal_participants."""
     insp = inspect(engine)
@@ -82,6 +92,7 @@ def _backfill_event_participants():
 Base.metadata.create_all(bind=engine)
 _ensure_category_column()
 _ensure_guests_count_column()
+_ensure_is_fixed_column()
 _backfill_event_participants()
 
 app = FastAPI(title="Сметы забросов")

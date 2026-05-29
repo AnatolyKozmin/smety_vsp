@@ -464,6 +464,7 @@ def get_event_full(event_id: int, db: Session = Depends(get_db)):
             "product_id": ing.product_id,
             "grams_per_portion": ing.grams_per_portion,
             "taken": ing.taken,
+            "is_fixed": ing.is_fixed or False,
             "product": _product_dict(ing.product),
         }
 
@@ -568,7 +569,10 @@ def get_estimate(event_id: int, db: Session = Depends(get_db)):
                 dish_total = 0.0
                 for ing in dish.ingredients:
                     prod = ing.product
-                    total_grams = (ing.grams_per_portion or 0) * portions
+                    if ing.is_fixed:
+                        total_grams = ing.grams_per_portion or 0
+                    else:
+                        total_grams = (ing.grams_per_portion or 0) * portions
                     packages = _packages(total_grams, prod.grams_in_package)
                     price = packages * (prod.price_per_unit or 0)
                     dish_total += price
@@ -728,7 +732,11 @@ def get_shopping_list(event_id: int, db: Session = Depends(get_db)):
                 for ing in dish.ingredients:
                     prod = ing.product
                     products[prod.id] = prod
-                    grams_by_product[prod.id] = grams_by_product.get(prod.id, 0.0) + (ing.grams_per_portion or 0) * portions
+                    if ing.is_fixed:
+                        g = ing.grams_per_portion or 0
+                    else:
+                        g = (ing.grams_per_portion or 0) * portions
+                    grams_by_product[prod.id] = grams_by_product.get(prod.id, 0.0) + g
 
     for i in e.misc_items:
         prod = i.product

@@ -150,8 +150,9 @@
         <table>
           <thead>
             <tr>
-              <th style="width:55%">Продукт</th>
-              <th class="right">г / порция</th>
+              <th style="width:42%">Продукт</th>
+              <th class="right">Кол-во, г</th>
+              <th class="center" title="Фиксированное кол-во — не умножается на людей">Фикс</th>
               <th>Срок</th>
               <th></th>
             </tr>
@@ -161,7 +162,17 @@
               <td>
                 <ProductPicker :products="products" v-model="ing.product_id" />
               </td>
-              <td><input type="number" v-model.number="ing.grams_per_portion" class="w-sm" /></td>
+              <td>
+                <div style="display:flex;align-items:center;gap:4px">
+                  <input type="number" v-model.number="ing.grams_per_portion" class="w-sm" />
+                  <span class="muted" style="font-size:11px;white-space:nowrap">
+                    {{ ing.is_fixed ? 'г (фикс)' : 'г/чел.' }}
+                  </span>
+                </div>
+              </td>
+              <td class="center">
+                <input type="checkbox" v-model="ing.is_fixed" />
+              </td>
               <td>
                 <span v-if="termOf(ing.product_id)" class="tag" :class="termClass(ing.product_id)">
                   {{ termOf(ing.product_id) }}
@@ -172,7 +183,7 @@
               </td>
             </tr>
             <tr v-if="!editDish.ingredients.length">
-              <td colspan="4" class="muted center">Добавьте первый ингредиент ↓</td>
+              <td colspan="5" class="muted center">Добавьте первый ингредиент ↓</td>
             </tr>
           </tbody>
         </table>
@@ -218,7 +229,7 @@ const editDish = ref(null)
 const editError = ref('')
 
 function newIng() {
-  return { product_id: null, grams_per_portion: 0, taken: false }
+  return { product_id: null, grams_per_portion: 0, taken: false, is_fixed: false }
 }
 
 function mealIcon(name) {
@@ -374,6 +385,7 @@ function openEditDish(dsh) {
       product_id: i.product_id,
       grams_per_portion: i.grams_per_portion,
       taken: i.taken,
+      is_fixed: i.is_fixed || false,
     })),
   }
   editError.value = ''
@@ -395,6 +407,7 @@ async function saveEditDish() {
         product_id: i.product_id,
         grams_per_portion: Number(i.grams_per_portion) || 0,
         taken: !!i.taken,
+        is_fixed: !!i.is_fixed,
       })),
   }
   try {

@@ -70,7 +70,7 @@
               <tr>
                 <th>Продукт</th>
                 <th class="right">г/порция</th>
-                <th class="right">Всего, г</th>
+                <th class="right">Всего</th>
                 <th>Ед.</th>
                 <th class="right">Г в упак.</th>
                 <th class="right">Цена/уп</th>
@@ -89,7 +89,7 @@
                   </span>
                 </td>
                 <td class="right">{{ ing.grams_per_portion }}</td>
-                <td class="right">{{ ing.total_grams }}</td>
+                <td class="right">{{ fmtGrams(ing.total_grams) }}</td>
                 <td>{{ ing.unit }}</td>
                 <td class="right">{{ ing.grams_in_package || '—' }}</td>
                 <td class="right">{{ ing.price_per_unit }} ₽</td>
@@ -157,6 +157,11 @@ const error = ref('')
 
 function fmt(n) {
   return new Intl.NumberFormat('ru-RU', { maximumFractionDigits: 2 }).format(n || 0)
+}
+function fmtGrams(g) {
+  if (!g) return '—'
+  if (g >= 1000) return (g / 1000).toFixed(2).replace(/\.?0+$/, '') + ' кг'
+  return g + ' г'
 }
 function termClass(t) {
   if (!t) return ''

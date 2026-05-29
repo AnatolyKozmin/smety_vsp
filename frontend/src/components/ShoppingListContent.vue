@@ -47,7 +47,7 @@
             </div>
             <div class="pc-meta">
               <span class="pc-qty">{{ r.packages_needed }} {{ r.unit }}</span>
-              <span v-if="r.total_grams" class="muted">{{ fmt(r.total_grams) }} г</span>
+              <span v-if="r.total_grams" class="muted">{{ fmtGrams(r.total_grams) }}</span>
               <span v-if="r.price_per_unit" class="muted">{{ fmt(r.price_per_unit) }} ₽/уп</span>
               <span class="pc-price">{{ fmt(r.total_price) }} ₽</span>
             </div>
@@ -69,7 +69,7 @@
             </div>
             <div class="pc-meta">
               <span class="pc-qty">{{ r.packages_needed }} {{ r.unit }}</span>
-              <span v-if="r.total_grams" class="muted">{{ fmt(r.total_grams) }} г</span>
+              <span v-if="r.total_grams" class="muted">{{ fmtGrams(r.total_grams) }}</span>
               <span v-if="r.price_per_unit" class="muted">{{ fmt(r.price_per_unit) }} ₽/уп</span>
               <span class="pc-price">{{ fmt(r.total_price) }} ₽</span>
             </div>
@@ -136,7 +136,7 @@
                   {{ ing.product.name }}
                 </span>
                 <span class="ing-detail muted">
-                  {{ totalGrams(ing, meal) }} г
+                  {{ fmtGrams(totalGrams(ing, meal)) }}
                   <template v-if="ing.product.grams_in_package">
                     · {{ pkgs(ing, meal) }} {{ ing.product.unit }}
                   </template>
@@ -192,6 +192,12 @@ const fullData = ref(null)
 
 function fmt(n) {
   return new Intl.NumberFormat('ru-RU', { maximumFractionDigits: 2 }).format(n || 0)
+}
+
+function fmtGrams(g) {
+  if (!g) return '—'
+  if (g >= 1000) return (g / 1000).toFixed(2).replace(/\.?0+$/, '') + ' кг'
+  return g + ' г'
 }
 
 function mealIcon(name) {

@@ -102,6 +102,14 @@ def create_meal(day_id: int, payload: schemas.EventMealIn, db: Session = Depends
         raise HTTPException(404, "День не найден")
     m = models.EventMeal(day_id=day_id, **payload.model_dump())
     db.add(m)
+    db.flush()  # получаем m.id до commit
+    # Автозаполняем глобальными участниками заброса
+    event_pids = [
+        r[0] for r in db.query(models.EventParticipant.person_id)
+        .filter(models.EventParticipant.event_id == d.event_id).all()
+    ]
+    for pid in event_pids:
+        db.add(models.EventMealParticipant(meal_id=m.id, person_id=pid))
     db.commit()
     db.refresh(m)
     return m
@@ -331,6 +339,69 @@ def set_misc_participants(event_id: int, person_ids: List[int], db: Session = De
     return {"ok": True, "count": len(seen)}
 
 
+# ===== Global event participants ("кто едет") =====
+
+@router.get("/{event_id}/participants", response_model=List[int])
+def list_event_participants(event_id: int, db: Session = Depends(get_db)):
+    rows = (
+        db.query(models.EventParticipant.person_id)
+        .filter(models.EventParticipant.event_id == event_id)
+        .all()
+    )
+    return [r[0] for r in rows]
+
+
+@router.put("/{event_id}/participants")
+def set_event_participants(event_id: int, person_ids: List[int], db: Session = Depends(get_db)):
+    """Сохраняет глобальный список. Каскад:
+    - добавляем нового → добавляем во все приёмы пищи
+    - убираем → убираем из всех приёмов пищи
+    """
+    e = db.get(models.Event, event_id)
+    if not e:
+        raise HTTPException(404, "Заброс не найден")
+
+    old_ids = {
+        r[0] for r in db.query(models.EventParticipant.person_id)
+        .filter(models.EventParticipant.event_id == event_id).all()
+    }
+    new_ids = set(person_ids)
+
+    added = new_ids - old_ids
+    removed = old_ids - new_ids
+
+    # Обновляем глобальный список
+    db.query(models.EventParticipant).filter(
+        models.EventParticipant.event_id == event_id
+    ).delete()
+    for pid in new_ids:
+        db.add(models.EventParticipant(event_id=event_id, person_id=pid))
+
+    # Каскад в приёмы пищи
+    meal_ids = [
+        r[0] for r in db.query(models.EventMeal.id)
+        .join(models.EventDay, models.EventDay.id == models.EventMeal.day_id)
+        .filter(models.EventDay.event_id == event_id).all()
+    ]
+    for mid in meal_ids:
+        if added:
+            existing = {
+                r[0] for r in db.query(models.EventMealParticipant.person_id)
+                .filter(models.EventMealParticipant.meal_id == mid).all()
+            }
+            for pid in added:
+                if pid not in existing:
+                    db.add(models.EventMealParticipant(meal_id=mid, person_id=pid))
+        if removed:
+            db.query(models.EventMealParticipant).filter(
+                models.EventMealParticipant.meal_id == mid,
+                models.EventMealParticipant.person_id.in_(removed),
+            ).delete()
+
+    db.commit()
+    return {"ok": True, "count": len(new_ids)}
+
+
 # ===== Payments =====
 
 @router.put("/{event_id}/payments")
@@ -439,6 +510,10 @@ def get_event_full(event_id: int, db: Session = Depends(get_db)):
             for i in e.misc_items
         ],
         "misc_participant_ids": [p.person_id for p in e.misc_participants],
+        "event_participant_ids": [
+            r[0] for r in db.query(models.EventParticipant.person_id)
+            .filter(models.EventParticipant.event_id == event_id).all()
+        ],
     }
 
 

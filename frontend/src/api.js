@@ -95,6 +95,12 @@ export const api = {
     method: 'PUT', body: JSON.stringify({ person_id: personId, paid_amount: amount }),
   }),
 
+  // event participants ("кто едет")
+  getEventParticipants: (eventId) => request(`/events/${eventId}/participants`),
+  setEventParticipants: (eventId, ids) => request(`/events/${eventId}/participants`, {
+    method: 'PUT', body: JSON.stringify(ids),
+  }),
+
   // guest items
   getGuestItems: (eventId) => request(`/events/${eventId}/guest-items`),
   addGuestProduct: (eventId, data) => request(`/events/${eventId}/guest-products`, {

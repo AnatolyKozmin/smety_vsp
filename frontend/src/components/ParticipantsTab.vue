@@ -8,6 +8,35 @@
     </div>
 
     <template v-else>
+      <!-- ===== Кто едет ===== -->
+      <div class="card going-card">
+        <div class="going-header">
+          <h3 style="margin:0">✅ Кто едет</h3>
+          <span class="muted" style="font-size:13px">{{ goingIds.length }} из {{ people.length }} чел.</span>
+        </div>
+        <p class="muted" style="font-size:13px; margin:6px 0 14px">
+          При изменении список автоматически обновится во всех приёмах пищи.
+          Новые приёмы тоже будут заполнены этим списком.
+        </p>
+        <div class="going-grid">
+          <label
+            v-for="person in people"
+            :key="person.id"
+            class="going-label"
+            :class="{ going: goingIds.includes(person.id) }"
+          >
+            <input
+              type="checkbox"
+              :checked="goingIds.includes(person.id)"
+              @change="toggleGoing(person.id, $event.target.checked)"
+            />
+            <span>{{ person.full_name }}</span>
+            <span v-if="person.role" class="muted role-badge">{{ person.role }}</span>
+          </label>
+        </div>
+        <div v-if="goingSaving" class="muted" style="font-size:12px; margin-top:8px">Сохранение…</div>
+      </div>
+
       <div class="hint-block" style="margin-bottom:14px">
         👤 Личные продукты и блюда каждого участника. Продукты делятся по объёму закупки.
       </div>
@@ -142,6 +171,8 @@ const people = ref([])
 const products = ref([])
 const participantProducts = ref([])
 const participantDishes = ref([])
+const goingIds = ref([])
+const goingSaving = ref(false)
 
 const activePerson = ref(null)
 const newDishName = ref('')
@@ -159,17 +190,31 @@ async function load() {
   loading.value = true
   error.value = ''
   try {
-    const [ppl, prods, items] = await Promise.all([
+    const [ppl, prods, items, gids] = await Promise.all([
       api.listPeople(),
       api.listProducts(),
       api.getParticipantItems(props.eventId),
+      api.getEventParticipants(props.eventId),
     ])
     people.value = ppl
     products.value = prods
     participantProducts.value = items.products
     participantDishes.value = items.dishes
+    goingIds.value = gids
   } catch (e) { error.value = e.message }
   finally { loading.value = false }
+}
+
+async function toggleGoing(personId, checked) {
+  const s = new Set(goingIds.value)
+  if (checked) s.add(personId); else s.delete(personId)
+  goingIds.value = [...s]
+  goingSaving.value = true
+  try {
+    await api.setEventParticipants(props.eventId, goingIds.value)
+  } finally {
+    goingSaving.value = false
+  }
 }
 
 async function reload() {
@@ -419,4 +464,38 @@ defineExpose({ reload: load })
 
 .dish-simple-row:last-child { border-bottom: 0; }
 .dish-simple-row:hover { background: var(--green-50); }
+
+/* Going card */
+.going-card { margin-bottom: 16px; padding: 16px 18px; }
+.going-header {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  margin-bottom: 4px;
+}
+.going-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 6px;
+}
+.going-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background 0.1s;
+}
+.going-label:hover { background: var(--green-50); }
+.going-label.going {
+  background: var(--green-50);
+  border-color: var(--green-500);
+}
+.role-badge {
+  font-size: 11px;
+  margin-left: auto;
+}
 </style>

@@ -186,6 +186,15 @@ class EventPayment(Base):
     __table_args__ = (UniqueConstraint("event_id", "person_id", name="uniq_event_person_pay"),)
 
 
+class EventParticipant(Base):
+    """Глобальный список «кто едет» на заброс."""
+    __tablename__ = "event_participants"
+    id = Column(Integer, primary_key=True)
+    event_id = Column(Integer, ForeignKey("events.id", ondelete="CASCADE"), nullable=False)
+    person_id = Column(Integer, ForeignKey("people.id", ondelete="CASCADE"), nullable=False)
+    __table_args__ = (UniqueConstraint("event_id", "person_id", name="uniq_event_participant"),)
+
+
 class EventGuestProduct(Base):
     """Общие продукты для всех гостей заброса, с разбивкой по объёму закупки."""
     __tablename__ = "event_guest_products"

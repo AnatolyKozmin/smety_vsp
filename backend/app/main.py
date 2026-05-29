@@ -52,9 +52,37 @@ def _ensure_guests_count_column():
                 conn.execute(text("ALTER TABLE event_meals ADD COLUMN guests_count INTEGER DEFAULT 0"))
 
 
+def _backfill_event_participants():
+    """Для существующих забросов заполняет event_participants из meal_participants."""
+    insp = inspect(engine)
+    if "event_participants" not in insp.get_table_names():
+        return
+    db = SessionLocal()
+    try:
+        events = db.query(models.Event).all()
+        for event in events:
+            already = db.query(models.EventParticipant).filter(
+                models.EventParticipant.event_id == event.id
+            ).count()
+            if already > 0:
+                continue
+            # Собираем уникальных участников из всех приёмов пищи этого заброса
+            pids = set()
+            for day in event.days:
+                for meal in day.meals:
+                    for mp in meal.participants:
+                        pids.add(mp.person_id)
+            for pid in pids:
+                db.add(models.EventParticipant(event_id=event.id, person_id=pid))
+        db.commit()
+    finally:
+        db.close()
+
+
 Base.metadata.create_all(bind=engine)
 _ensure_category_column()
 _ensure_guests_count_column()
+_backfill_event_participants()
 
 app = FastAPI(title="Сметы забросов")
 

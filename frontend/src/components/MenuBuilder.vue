@@ -42,14 +42,14 @@
               👥 {{ meal.participant_ids.length }}
             </button>
             <span class="guests-inline" title="Дополнительные едоки без имени">
-              +<input
+              👤<input
                 type="number"
                 :value="meal.guests_count || 0"
                 min="0"
                 class="guests-num-input"
                 @change="updateGuestsCount(meal, $event.target.value)"
                 @click.stop
-              />
+              />чел.
             </span>
             <span v-if="effectivePortions(meal) > 0" class="tag green">= {{ effectivePortions(meal) }} порций</span>
           </div>
@@ -613,20 +613,21 @@ button.ghost:disabled { opacity: 0.3; }
 .guests-inline {
   display: flex;
   align-items: center;
-  gap: 2px;
+  gap: 4px;
   background: #fff;
   border: 1px solid var(--border);
-  border-radius: 999px;
-  padding: 4px 10px 4px 8px;
-  font-size: 12px;
+  border-radius: 10px;
+  padding: 5px 12px 5px 10px;
+  font-size: 13px;
   color: var(--muted);
+  font-weight: 500;
 }
 .guests-num-input {
-  width: 36px;
+  width: 52px;
   border: none;
   background: transparent;
-  font-size: 13px;
-  font-weight: 600;
+  font-size: 16px;
+  font-weight: 700;
   color: var(--green-800);
   padding: 0;
   text-align: center;

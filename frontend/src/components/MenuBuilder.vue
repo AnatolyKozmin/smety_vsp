@@ -79,9 +79,26 @@
         <button class="add-dish-btn" @click="openAddDish(meal)">+ Добавить блюдо</button>
       </div>
 
-      <!-- Fixed items for the day -->
-      <div class="fixed-items-section">
-        <div class="fixed-items-title">📌 Фикс позиции дня</div>
+      <!-- Quick add meal + fixed button -->
+      <div class="add-meal-bar">
+        <span class="muted">+ Приём пищи:</span>
+        <button class="chip" @click="addPresetMeal(day, 'Завтрак')">🍳 Завтрак</button>
+        <button class="chip" @click="addPresetMeal(day, 'Обед')">🥣 Обед</button>
+        <button class="chip" @click="addPresetMeal(day, 'Ужин')">🍲 Ужин</button>
+        <button class="chip" @click="addPresetMeal(day, 'Перекус')">🥪 Перекус</button>
+        <button class="chip" @click="addPresetMeal(day, 'Новый приём')">＋ Свой</button>
+        <button
+          class="chip chip-fixed"
+          :class="{ 'chip-fixed-active': fixedOpen[day.id] }"
+          @click="toggleFixed(day.id)"
+        >
+          📌 Фикс продукт
+          <span v-if="day.fixed_items && day.fixed_items.length" class="fixed-count">{{ day.fixed_items.length }}</span>
+        </button>
+      </div>
+
+      <!-- Fixed items panel (toggle) -->
+      <div v-if="fixedOpen[day.id]" class="fixed-panel">
         <div v-if="day.fixed_items && day.fixed_items.length" class="fixed-items-list">
           <div v-for="item in day.fixed_items" :key="item.id" class="fixed-item-row">
             <span class="fixed-item-name">{{ item.product.name }}</span>
@@ -101,7 +118,7 @@
           <ProductPicker
             :products="products"
             v-model="newFixed[day.id].product_id"
-            placeholder="Продукт…"
+            placeholder="Выберите продукт…"
             style="flex:1; min-width:0"
           />
           <input
@@ -117,16 +134,6 @@
             @click="addFixed(day)"
           >+ Добавить</button>
         </div>
-      </div>
-
-      <!-- Quick add meal section -->
-      <div class="add-meal-bar">
-        <span class="muted">+ Приём пищи:</span>
-        <button class="chip" @click="addPresetMeal(day, 'Завтрак')">🍳 Завтрак</button>
-        <button class="chip" @click="addPresetMeal(day, 'Обед')">🥣 Обед</button>
-        <button class="chip" @click="addPresetMeal(day, 'Ужин')">🍲 Ужин</button>
-        <button class="chip" @click="addPresetMeal(day, 'Перекус')">🥪 Перекус</button>
-        <button class="chip" @click="addPresetMeal(day, 'Новый приём')">＋ Свой</button>
       </div>
     </div>
 
@@ -262,9 +269,14 @@ const participantsFor = ref(null)
 const tempIds = ref([])
 
 const newFixed = ref({})
+const fixedOpen = ref({})
 
 function ensureNewFixed(dayId) {
   if (!newFixed.value[dayId]) newFixed.value[dayId] = { product_id: null, quantity: 1 }
+}
+
+function toggleFixed(dayId) {
+  fixedOpen.value[dayId] = !fixedOpen.value[dayId]
 }
 
 const addDishFor = ref(null)
@@ -704,26 +716,36 @@ button.ghost.danger-text:hover { background: #fde2e2; }
 
 button.ghost:disabled { opacity: 0.3; }
 
-.fixed-items-section {
-  margin-top: 14px;
-  padding-top: 12px;
-  border-top: 1px dashed var(--border);
+.chip-fixed {
+  border-color: #e65100;
+  color: #e65100;
 }
-.fixed-items-title {
-  font-size: 12px;
-  font-weight: 700;
-  color: var(--green-700);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  margin-bottom: 8px;
+.chip-fixed:hover { background: #fff3e0; border-color: #e65100; }
+.chip-fixed-active { background: #fff3e0; border-color: #e65100; }
+.fixed-count {
+  display: inline-block;
+  background: #e65100;
+  color: #fff;
+  border-radius: 999px;
+  padding: 0 6px;
+  font-size: 11px;
+  margin-left: 4px;
 }
-.fixed-items-list { margin-bottom: 8px; }
+
+.fixed-panel {
+  background: #fff8f0;
+  border: 1px solid #ffe0c0;
+  border-radius: 10px;
+  padding: 12px 14px;
+  margin-top: 8px;
+}
+.fixed-items-list { margin-bottom: 10px; }
 .fixed-item-row {
   display: flex;
   align-items: center;
   gap: 8px;
   padding: 5px 0;
-  border-bottom: 1px solid var(--green-50);
+  border-bottom: 1px solid #ffd5a8;
 }
 .fixed-item-row:last-child { border-bottom: 0; }
 .fixed-item-name { flex: 1; font-size: 13px; }

@@ -137,9 +137,14 @@
                   <span v-if="ing.is_fixed" class="fixed-badge">фикс</span>
                 </span>
                 <span class="ing-detail muted">
-                  {{ fmtGrams(totalGrams(ing, meal)) }}
-                  <template v-if="ing.product.grams_in_package">
-                    · {{ pkgs(ing, meal) }} {{ ing.product.unit }}
+                  <template v-if="ing.is_fixed">
+                    {{ ing.grams_per_portion }} {{ ing.product.unit || 'шт' }}
+                  </template>
+                  <template v-else>
+                    {{ fmtGrams(totalGrams(ing, meal)) }}
+                    <template v-if="ing.product.grams_in_package">
+                      · {{ pkgs(ing, meal) }} {{ ing.product.unit }}
+                    </template>
                   </template>
                 </span>
               </label>

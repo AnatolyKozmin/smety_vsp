@@ -570,10 +570,11 @@ def get_estimate(event_id: int, db: Session = Depends(get_db)):
                 for ing in dish.ingredients:
                     prod = ing.product
                     if ing.is_fixed:
-                        total_grams = ing.grams_per_portion or 0
+                        total_grams = 0
+                        packages = ing.grams_per_portion or 0  # уже в упаковках/штуках
                     else:
                         total_grams = (ing.grams_per_portion or 0) * portions
-                    packages = _packages(total_grams, prod.grams_in_package)
+                        packages = _packages(total_grams, prod.grams_in_package)
                     price = packages * (prod.price_per_unit or 0)
                     dish_total += price
                     ings_out.append(schemas.IngredientCalc(
@@ -733,10 +734,11 @@ def get_shopping_list(event_id: int, db: Session = Depends(get_db)):
                     prod = ing.product
                     products[prod.id] = prod
                     if ing.is_fixed:
-                        g = ing.grams_per_portion or 0
+                        # фикс — значение уже в упаковках, добавляем в units
+                        units_by_product[prod.id] = units_by_product.get(prod.id, 0.0) + (ing.grams_per_portion or 0)
                     else:
                         g = (ing.grams_per_portion or 0) * portions
-                    grams_by_product[prod.id] = grams_by_product.get(prod.id, 0.0) + g
+                        grams_by_product[prod.id] = grams_by_product.get(prod.id, 0.0) + g
 
     for i in e.misc_items:
         prod = i.product

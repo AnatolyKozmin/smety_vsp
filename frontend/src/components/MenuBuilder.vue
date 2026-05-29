@@ -166,7 +166,7 @@
                 <div style="display:flex;align-items:center;gap:4px">
                   <input type="number" v-model.number="ing.grams_per_portion" class="w-sm" />
                   <span class="muted" style="font-size:11px;white-space:nowrap">
-                    {{ ing.is_fixed ? 'г (фикс)' : 'г/чел.' }}
+                    {{ ing.is_fixed ? (unitOf(ing.product_id) || 'шт') : 'г/чел.' }}
                   </span>
                 </div>
               </td>
@@ -242,6 +242,7 @@ function mealIcon(name) {
 }
 
 function termOf(pid) { return productById.value[pid]?.storage_term || '' }
+function unitOf(pid) { return productById.value[pid]?.unit || '' }
 function termClass(pid) {
   const t = termOf(pid)
   if (!t) return ''

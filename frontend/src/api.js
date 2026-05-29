@@ -101,6 +101,16 @@ export const api = {
     method: 'PUT', body: JSON.stringify(ids),
   }),
 
+  // day fixed items
+  listDayFixedItems: (dayId) => request(`/events/days/${dayId}/fixed-items`),
+  addDayFixedItem: (dayId, data) => request(`/events/days/${dayId}/fixed-items`, {
+    method: 'POST', body: JSON.stringify(data),
+  }),
+  updateDayFixedItem: (itemId, data) => request(`/events/day-fixed-items/${itemId}`, {
+    method: 'PUT', body: JSON.stringify(data),
+  }),
+  deleteDayFixedItem: (itemId) => request(`/events/day-fixed-items/${itemId}`, { method: 'DELETE' }),
+
   // guest items
   getGuestItems: (eventId) => request(`/events/${eventId}/guest-items`),
   addGuestProduct: (eventId, data) => request(`/events/${eventId}/guest-products`, {

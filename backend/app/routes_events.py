@@ -500,6 +500,16 @@ def get_event_full(event_id: int, db: Session = Depends(get_db)):
             }
             for d in sorted(e.days, key=lambda x: x.sort_order)
         ],
+        "day_fixed_items": {
+            str(d.id): [
+                {"id": i.id, "day_id": d.id, "product_id": i.product_id,
+                 "quantity": i.quantity, "taken": i.taken, "product": _product_dict(i.product)}
+                for i in db.query(models.EventDayFixedItem)
+                    .options(selectinload(models.EventDayFixedItem.product))
+                    .filter(models.EventDayFixedItem.day_id == d.id).all()
+            ]
+            for d in e.days
+        },
         "misc_items": [
             {
                 "id": i.id,
@@ -757,6 +767,19 @@ def get_shopping_list(event_id: int, db: Session = Depends(get_db)):
         products[prod.id] = prod
         units_by_product[prod.id] = units_by_product.get(prod.id, 0.0) + (i.quantity or 0)
 
+    # Фиксированные позиции дней
+    day_fixed = (
+        db.query(models.EventDayFixedItem)
+        .options(selectinload(models.EventDayFixedItem.product))
+        .join(models.EventDay, models.EventDay.id == models.EventDayFixedItem.day_id)
+        .filter(models.EventDay.event_id == event_id)
+        .all()
+    )
+    for i in day_fixed:
+        prod = i.product
+        products[prod.id] = prod
+        units_by_product[prod.id] = units_by_product.get(prod.id, 0.0) + (i.quantity or 0)
+
     # Общие продукты гостей
     guest_prods = (
         db.query(models.EventGuestProduct)
@@ -812,6 +835,57 @@ def get_shopping_list(event_id: int, db: Session = Depends(get_db)):
         long_total=round(long_total, 2),
         grand_total=round(short_total + long_total, 2),
     )
+
+
+# ===== Day fixed items =====
+
+@router.get("/days/{day_id}/fixed-items")
+def list_day_fixed_items(day_id: int, db: Session = Depends(get_db)):
+    items = (
+        db.query(models.EventDayFixedItem)
+        .options(selectinload(models.EventDayFixedItem.product))
+        .filter(models.EventDayFixedItem.day_id == day_id)
+        .all()
+    )
+    return [
+        {"id": i.id, "day_id": i.day_id, "product_id": i.product_id,
+         "quantity": i.quantity, "taken": i.taken, "product": _product_dict(i.product)}
+        for i in items
+    ]
+
+
+@router.post("/days/{day_id}/fixed-items")
+def add_day_fixed_item(day_id: int, payload: schemas.DayFixedItemIn, db: Session = Depends(get_db)):
+    d = db.get(models.EventDay, day_id)
+    if not d:
+        raise HTTPException(404, "День не найден")
+    item = models.EventDayFixedItem(day_id=day_id, **payload.model_dump())
+    db.add(item)
+    db.commit()
+    db.refresh(item)
+    return {"id": item.id, "day_id": item.day_id, "product_id": item.product_id,
+            "quantity": item.quantity, "taken": item.taken, "product": _product_dict(item.product)}
+
+
+@router.put("/day-fixed-items/{item_id}")
+def update_day_fixed_item(item_id: int, payload: schemas.DayFixedItemIn, db: Session = Depends(get_db)):
+    item = db.get(models.EventDayFixedItem, item_id)
+    if not item:
+        raise HTTPException(404, "Не найдено")
+    for k, v in payload.model_dump().items():
+        setattr(item, k, v)
+    db.commit()
+    return {"ok": True}
+
+
+@router.delete("/day-fixed-items/{item_id}")
+def delete_day_fixed_item(item_id: int, db: Session = Depends(get_db)):
+    item = db.get(models.EventDayFixedItem, item_id)
+    if not item:
+        raise HTTPException(404, "Не найдено")
+    db.delete(item)
+    db.commit()
+    return {"ok": True}
 
 
 # ===== Guest items =====

@@ -196,6 +196,18 @@ class EventParticipant(Base):
     __table_args__ = (UniqueConstraint("event_id", "person_id", name="uniq_event_participant"),)
 
 
+class EventDayFixedItem(Base):
+    """Фиксированные позиции дня — продукты с заданным кол-вом, не привязанные к блюду."""
+    __tablename__ = "event_day_fixed_items"
+    id = Column(Integer, primary_key=True)
+    day_id = Column(Integer, ForeignKey("event_days.id", ondelete="CASCADE"), nullable=False)
+    product_id = Column(Integer, ForeignKey("products.id", ondelete="RESTRICT"), nullable=False)
+    quantity = Column(Float, default=1.0)  # в единицах продукта (шт, кг, упаковки)
+    taken = Column(Boolean, default=False)
+
+    product = relationship("Product")
+
+
 class EventGuestProduct(Base):
     """Общие продукты для всех гостей заброса, с разбивкой по объёму закупки."""
     __tablename__ = "event_guest_products"

@@ -254,6 +254,21 @@ class PaymentUpdate(BaseModel):
     paid_amount: float
 
 
+# ===== Day fixed items =====
+
+class DayFixedItemIn(BaseModel):
+    product_id: int
+    quantity: float = 1.0
+    taken: bool = False
+
+
+class DayFixedItemOut(DayFixedItemIn):
+    id: int
+    day_id: int
+    product: ProductOut
+    model_config = ConfigDict(from_attributes=True)
+
+
 # ===== Guest items =====
 
 class GuestProductIn(BaseModel):

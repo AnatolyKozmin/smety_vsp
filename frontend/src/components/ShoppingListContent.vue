@@ -151,7 +151,32 @@
             </div>
           </div>
 
-          <!-- Прочее дня не показываем — оно в сводном -->
+          <!-- Фикс позиции дня -->
+          <template v-if="(fullData.day_fixed_items || {})[String(day.id)]?.length">
+            <div class="meal-section">
+              <div class="meal-title">📌 Фикс позиции дня</div>
+              <label
+                v-for="item in (fullData.day_fixed_items || {})[String(day.id)]"
+                :key="item.id"
+                class="ing-row"
+                :class="{ taken: item.taken }"
+              >
+                <input
+                  type="checkbox"
+                  class="ing-check"
+                  :checked="item.taken"
+                  @change="toggleDayFixed(item, $event.target.checked)"
+                />
+                <span class="ing-name" :class="{ 'line-through': item.taken }">
+                  {{ item.product.name }}
+                  <span class="fixed-badge">фикс</span>
+                </span>
+                <span class="ing-detail muted">
+                  {{ item.quantity }} {{ item.product.unit || 'шт' }}
+                </span>
+              </label>
+            </div>
+          </template>
         </div>
 
         <!-- Прочее (misc) -->
@@ -247,6 +272,15 @@ async function load() {
 async function toggleIngredient(ing, checked) {
   ing.taken = checked
   await api.toggleTaken(ing.id, checked)
+}
+
+async function toggleDayFixed(item, checked) {
+  item.taken = checked
+  await api.updateDayFixedItem(item.id, {
+    product_id: item.product_id,
+    quantity: item.quantity,
+    taken: checked,
+  })
 }
 
 async function toggleMisc(item, checked) {

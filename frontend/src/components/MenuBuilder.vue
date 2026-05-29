@@ -79,6 +79,46 @@
         <button class="add-dish-btn" @click="openAddDish(meal)">+ Добавить блюдо</button>
       </div>
 
+      <!-- Fixed items for the day -->
+      <div class="fixed-items-section">
+        <div class="fixed-items-title">📌 Фикс позиции дня</div>
+        <div v-if="day.fixed_items && day.fixed_items.length" class="fixed-items-list">
+          <div v-for="item in day.fixed_items" :key="item.id" class="fixed-item-row">
+            <span class="fixed-item-name">{{ item.product.name }}</span>
+            <input
+              type="number"
+              :value="item.quantity"
+              class="qty-fixed-input"
+              min="0.1"
+              step="0.1"
+              @change="updateFixed(item, $event.target.value)"
+            />
+            <span class="muted" style="font-size:12px">{{ item.product.unit }}</span>
+            <button class="ghost small danger-text" @click="removeFixed(item)">×</button>
+          </div>
+        </div>
+        <div class="add-fixed-bar">
+          <ProductPicker
+            :products="products"
+            v-model="newFixed[day.id].product_id"
+            placeholder="Продукт…"
+            style="flex:1; min-width:0"
+          />
+          <input
+            type="number"
+            v-model.number="newFixed[day.id].quantity"
+            class="qty-fixed-input"
+            min="0.1"
+            step="0.1"
+          />
+          <button
+            class="secondary small"
+            :disabled="!newFixed[day.id].product_id"
+            @click="addFixed(day)"
+          >+ Добавить</button>
+        </div>
+      </div>
+
       <!-- Quick add meal section -->
       <div class="add-meal-bar">
         <span class="muted">+ Приём пищи:</span>
@@ -221,6 +261,12 @@ const error = ref('')
 const participantsFor = ref(null)
 const tempIds = ref([])
 
+const newFixed = ref({})
+
+function ensureNewFixed(dayId) {
+  if (!newFixed.value[dayId]) newFixed.value[dayId] = { product_id: null, quantity: 1 }
+}
+
 const addDishFor = ref(null)
 const selectedCatalogDish = ref(null)
 const newDishName = ref('')
@@ -259,6 +305,12 @@ async function load() {
       api.listDishes(),
       api.listProducts(),
     ])
+    // Прикладываем фикс-позиции к дням
+    const fixedMap = full.day_fixed_items || {}
+    full.days.forEach(d => {
+      d.fixed_items = fixedMap[String(d.id)] || []
+      ensureNewFixed(d.id)
+    })
     days.value = full.days
     people.value = ppl
     catalogDishes.value = dishes
@@ -421,6 +473,34 @@ async function saveEditDish() {
 async function removeDish(dsh) {
   if (!confirm(`Удалить блюдо «${dsh.name}»?`)) return
   await api.deleteEventDish(dsh.id)
+  await refresh()
+}
+
+async function addFixed(day) {
+  const nf = newFixed.value[day.id]
+  if (!nf.product_id) return
+  await api.addDayFixedItem(day.id, {
+    product_id: nf.product_id,
+    quantity: Number(nf.quantity) || 1,
+    taken: false,
+  })
+  nf.product_id = null
+  nf.quantity = 1
+  await refresh()
+}
+
+async function updateFixed(item, raw) {
+  const qty = Math.max(0.1, parseFloat(raw) || 1)
+  item.quantity = qty
+  await api.updateDayFixedItem(item.id, {
+    product_id: item.product_id,
+    quantity: qty,
+    taken: item.taken,
+  })
+}
+
+async function removeFixed(item) {
+  await api.deleteDayFixedItem(item.id)
   await refresh()
 }
 
@@ -623,6 +703,43 @@ button.ghost.danger-text { color: var(--berry); }
 button.ghost.danger-text:hover { background: #fde2e2; }
 
 button.ghost:disabled { opacity: 0.3; }
+
+.fixed-items-section {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px dashed var(--border);
+}
+.fixed-items-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--green-700);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 8px;
+}
+.fixed-items-list { margin-bottom: 8px; }
+.fixed-item-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 0;
+  border-bottom: 1px solid var(--green-50);
+}
+.fixed-item-row:last-child { border-bottom: 0; }
+.fixed-item-name { flex: 1; font-size: 13px; }
+.qty-fixed-input {
+  width: 60px;
+  padding: 4px 6px;
+  font-size: 13px;
+  font-weight: 600;
+  text-align: center;
+}
+.add-fixed-bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
 
 .guests-inline {
   display: flex;
